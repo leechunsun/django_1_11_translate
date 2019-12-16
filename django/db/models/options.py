@@ -162,7 +162,9 @@ class Options(object):
         from django.db import connection
         from django.db.backends.utils import truncate_name
 
+        # 把选项类 即option注入赋值给生成类的_meta
         cls._meta = self
+        # 再将类注入到当前option的model中
         self.model = cls
         # First, construct the default values for these options.
         self.object_name = cls.__name__
@@ -174,6 +176,7 @@ class Options(object):
         self.original_attrs = {}
 
         # Next, apply any overridden values from 'class Meta'.
+        # 把self.meta中可用的值注入到自己的属性中  进行覆盖默认配置
         if self.meta:
             meta_attrs = self.meta.__dict__.copy()
             for name in self.meta.__dict__:
@@ -209,6 +212,7 @@ class Options(object):
         del self.meta
 
         # If the db_table wasn't provided, use the app_label + model_name.
+        # 判断如果没有为模型设置数据库表名则 生成表名
         if not self.db_table:
             self.db_table = "%s_%s" % (self.app_label, self.model_name)
             self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())

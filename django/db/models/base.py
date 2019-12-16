@@ -80,25 +80,35 @@ class ModelBase(type):
     """
     Metaclass for all models.
     """
+    #  cls 将要创建的类对象 name类对象的名字  bases 传递的是cls的父类元祖  attrs 传过来的是类中的一些元素字典包含meta类
     def __new__(cls, name, bases, attrs):
+        # 获取元类的new方法 注意  还没有执行
         super_new = super(ModelBase, cls).__new__
 
         # Also ensure initialization is only performed for subclasses of Model
         # (excluding Model class itself).
+        # 检查一下这个父类中是否有 ModelBase
         parents = [b for b in bases if isinstance(b, ModelBase)]
         if not parents:
             return super_new(cls, name, bases, attrs)
 
         # Create the class.
+        # 开始创建类 注意不是创建Model 是我们自己实现的Model类或者是django apps中存在的其他对象类
+        # 获取 module 所在模块  new_attrs 存储属性的字典   classcell
         module = attrs.pop('__module__')
         new_attrs = {'__module__': module}
         classcell = attrs.pop('__classcell__', None)
+
         if classcell is not None:
             new_attrs['__classcell__'] = classcell
+        # new_class 内存中已经创建对象
         new_class = super_new(cls, name, bases, new_attrs)
+        # attr_meta 获取meta选项 即获取Meta类中的一些设置属性
         attr_meta = attrs.pop('Meta', None)
+        # 获取 abstract 属性
         abstract = getattr(attr_meta, 'abstract', False)
         if not attr_meta:
+            # 如果类中没有Meta内部类   看看你类变量中有没有
             meta = getattr(new_class, 'Meta', None)
         else:
             meta = attr_meta
@@ -107,8 +117,9 @@ class ModelBase(type):
         app_label = None
 
         # Look for an application configuration to attach the model to.
+        # 加载app的一些属性
         app_config = apps.get_containing_app_config(module)
-
+        # 给app_label赋值
         if getattr(meta, 'app_label', None) is None:
             if app_config is None:
                 if not abstract:
@@ -120,8 +131,9 @@ class ModelBase(type):
 
             else:
                 app_label = app_config.label
-
+        # 将meta 和一些默认属性 注入到 当前创建类的_meta属性中
         new_class.add_to_class('_meta', Options(meta, app_label))
+        # 如果不是抽象
         if not abstract:
             new_class.add_to_class(
                 'DoesNotExist',
@@ -141,6 +153,7 @@ class ModelBase(type):
                     ) or (MultipleObjectsReturned,),
                     module,
                     attached_to=new_class))
+            # 判断是否在类变量中设置了 _meta
             if base_meta and not base_meta.abstract:
                 # Non-abstract child classes inherit some attributes from their
                 # non-abstract parent (unless an ABC comes before it in the
@@ -149,12 +162,13 @@ class ModelBase(type):
                     new_class._meta.ordering = base_meta.ordering
                 if not hasattr(meta, 'get_latest_by'):
                     new_class._meta.get_latest_by = base_meta.get_latest_by
-
+        # 是否是代理
         is_proxy = new_class._meta.proxy
 
         # If the model is a proxy, ensure that the base class
         # hasn't been swapped out.
         if is_proxy and base_meta and base_meta.swapped:
+            # 如果被代理  那么就不能被代理
             raise TypeError("%s cannot proxy the swapped model '%s'." % (name, base_meta.swapped))
 
         # Add all attributes to the class.
@@ -162,6 +176,7 @@ class ModelBase(type):
             new_class.add_to_class(obj_name, obj)
 
         # All the fields of any type declared on this model
+        # 使用了一个迭代的方式去取local_fields， local_many_to_many， private_fields
         new_fields = chain(
             new_class._meta.local_fields,
             new_class._meta.local_many_to_many,
@@ -170,10 +185,14 @@ class ModelBase(type):
         field_names = {f.name for f in new_fields}
 
         # Basic setup for proxy models.
+        # 设置代理类型的模型
         if is_proxy:
             base = None
+            # 处理代理类中的父类
             for parent in [kls for kls in parents if hasattr(kls, '_meta')]:
+                # 如果被代理的是抽象类
                 if parent._meta.abstract:
+                    # 如果抽象类中fields 存在属性值
                     if parent._meta.fields:
                         raise TypeError(
                             "Abstract base class containing model fields not "
@@ -188,6 +207,7 @@ class ModelBase(type):
             if base is None:
                 raise TypeError("Proxy model '%s' has no non-abstract model base class." % name)
             new_class._meta.setup_proxy(base)
+            # concrete 具体的  有形的
             new_class._meta.concrete_model = base._meta.concrete_model
         else:
             new_class._meta.concrete_model = new_class
@@ -321,6 +341,7 @@ class ModelBase(type):
 
     def add_to_class(cls, name, value):
         # We should call the contribute_to_class method only if it's bound
+        #  灵魂拷问  value你是个类么？ value你有  contribute_to_class 这个玩意儿么
         if not inspect.isclass(value) and hasattr(value, 'contribute_to_class'):
             value.contribute_to_class(cls, name)
         else:
