@@ -326,7 +326,8 @@ class ModelBase(type):
         # Copy indexes so that index names are unique when models extend an
         # abstract model.
         new_class._meta.indexes = [copy.deepcopy(idx) for idx in new_class._meta.indexes]
-
+        # 自己加的
+        m = new_class._meta.base_manager
         if abstract:
             # Abstract base models can't be instantiated and don't appear in
             # the list of models for an app. We do the final setup for them a

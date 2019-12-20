@@ -914,7 +914,7 @@ class SQLCompiler(object):
         if result_type == NO_RESULTS:
             cursor.close()
             return
-
+        # 此处最大只返回100条结果转换为对象
         result = cursor_iter(
             cursor, self.connection.features.empty_fetchmany_value,
             self.col_count

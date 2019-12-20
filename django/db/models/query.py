@@ -50,6 +50,7 @@ class ModelIterable(BaseIterable):
         compiler = queryset.query.get_compiler(using=db)
         # Execute the query. This will also fill compiler.select, klass_info,
         # and annotations.
+        # 执行sql
         results = compiler.execute_sql(chunked_fetch=self.chunked_fetch)
         select, klass_info, annotation_col_map = (compiler.select, compiler.klass_info,
                                                   compiler.annotation_col_map)
@@ -169,6 +170,7 @@ class QuerySet(object):
         self._prefetch_related_lookups = ()
         self._prefetch_done = False
         self._known_related_objects = {}  # {rel_field: {pk: rel_obj}}
+        # 赋值的类
         self._iterable_class = ModelIterable
         self._fields = None
 
@@ -247,6 +249,7 @@ class QuerySet(object):
             3. self.iterator()
                - Responsible for turning the rows into model objects.
         """
+        # queryset的clone变量就是queryset的实例化对象
         self._fetch_all()
         return iter(self._result_cache)
 
@@ -1117,6 +1120,7 @@ class QuerySet(object):
         return clone
 
     def _fetch_all(self):
+        # 调用自己的fetch_all 方法  给自己_result_cache赋结果值
         if self._result_cache is None:
             self._result_cache = list(self._iterable_class(self))
         if self._prefetch_related_lookups and not self._prefetch_done:
