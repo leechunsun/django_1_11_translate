@@ -16,5 +16,3 @@ class CaseModel(models.Model):
         # managed = True #  是否同意django对此模型的管理
         # 这些选项是哪里来的？
         db_table = "db_cases"
-        # default_manager_name = ""
-        # local_managers = (MyManager(),)

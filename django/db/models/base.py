@@ -326,8 +326,8 @@ class ModelBase(type):
         # Copy indexes so that index names are unique when models extend an
         # abstract model.
         new_class._meta.indexes = [copy.deepcopy(idx) for idx in new_class._meta.indexes]
-        # 自己加的
-        m = new_class._meta.base_manager
+        # # 自己加的
+        # m = new_class._meta.base_manager
         if abstract:
             # Abstract base models can't be instantiated and don't appear in
             # the list of models for an app. We do the final setup for them a
@@ -490,6 +490,8 @@ class ModelState(object):
         self.adding = True
 
 
+# six.with_metaclass 是生成需基类的方式    个人理解：可以调用虚基类中的__new__方法  其他的不确定 。但是
+# 虚基类必须要继承自type
 class Model(six.with_metaclass(ModelBase)):
 
     def __init__(self, *args, **kwargs):

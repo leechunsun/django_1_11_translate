@@ -106,9 +106,11 @@ class BaseManager(object):
     def from_queryset(cls, queryset_class, class_name=None):
         if class_name is None:
             class_name = '%sFrom%s' % (cls.__name__, queryset_class.__name__)
+        # 将queryset 注入到生成基类（BaseManager）的_queryset_class属性中 （先放到class_dict）
         class_dict = {
             '_queryset_class': queryset_class,
         }
+        # 将queryset的方法注入到生成基类（BaseManager）相应的方法中 （先放到class_dict）
         class_dict.update(cls._get_queryset_methods(queryset_class))
         return type(class_name, (cls,), class_dict)
 
@@ -172,6 +174,7 @@ class BaseManager(object):
         return id(self)
 
 
+# BaseManager.from_queryset(QuerySet) 这是个神魔用法？
 class Manager(BaseManager.from_queryset(QuerySet)):
     pass
 
